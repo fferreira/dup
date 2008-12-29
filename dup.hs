@@ -12,27 +12,36 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -}
 
-
+--
 -- A simple duplicate file finder 
 --
 
 import Control.Monad (forM)
+import Control.Exception (handle)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.FilePath ((</>), splitFileName)
 import System.Environment (getArgs)
+import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink)
 import Data.List (sort, group)
 
 getRecursiveContents :: FilePath -> IO[FilePath]
 getRecursiveContents topdir = do
-  names <- getDirectoryContents topdir
+  names <- getDirectoryContents' topdir
   let properNames = filter (`notElem` [".", ".."]) names
   paths <- forM properNames $ \name -> do
     let path = topdir </> name
     isDirectory <- doesDirectoryExist path
-    if isDirectory
+    symLinkStatus <- getSymbolicLinkStatus path
+    if isDirectory && not(isSymbolicLink symLinkStatus)
       then getRecursiveContents path
       else return [path]
   return (concat paths)
+
+-- A safe version of getDirectoryContents that returns [] when
+-- the directory can't be opened
+getDirectoryContents' :: FilePath -> IO[FilePath]
+getDirectoryContents' files = handle (\_ -> return []) $ do
+  getDirectoryContents files
 
 findDuplicates origin = do
   files <- getRecursiveContents origin 
