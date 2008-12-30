@@ -16,18 +16,83 @@
 -- A simple duplicate file finder 
 --
 
+module Dup
+  (
+    findDuplicates
+  , byFileName
+  , getFilesFrom
+  , getDuplicatesFrom
+  ) where
+
+import System.FilePath ((</>), takeFileName)
+import Dic (groupByKey)
 import Control.Monad (forM)
-import Control.Exception (handle, bracket)
+import Control.Exception (handle)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
-import System.FilePath ((</>), splitFileName)
-import System.Environment (getArgs)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink)
-import Data.List (sort, sortBy, group, groupBy)
-import System.IO (openFile, IOMode(..), hClose, hFileSize)
-import qualified Data.ByteString.Lazy as D
 
-import MD5
+--findDuplicates :: (Eq a) => (FilePath -> IO(FilePath, a)) -> [FilePath] -> IO[[FilePath]]
+findDuplicates info files = do
+  fileInfo <- mapM info files
+  return $ (filter ((>1) . length) . groupByKey) fileInfo
 
+byFileName :: FilePath -> IO (FilePath, FilePath)
+byFileName file = do 
+  let pair = (takeFileName file, file)
+  return pair
+
+getFilesFrom :: FilePath -> IO[FilePath]
+getFilesFrom topdir = do
+  names <- getDirectoryContents' topdir
+  let properNames = filter (`notElem` [".", ".."]) names
+  paths <- forM properNames $ \name -> do
+    let path = topdir </> name
+    isDirectory <- doesDirectoryExist path
+    symLinkStatus <- getSymbolicLinkStatus path
+    if isDirectory && not(isSymbolicLink symLinkStatus)
+      then getFilesFrom path
+      else return [path]
+  return (concat paths)
+
+-- A safe version of getDirectoryContents that returns [] when
+-- the directory can't be opened
+getDirectoryContents' :: FilePath -> IO[FilePath]
+getDirectoryContents' files = handle (\_ -> return []) $ do
+  getDirectoryContents files
+
+--getDuplicatesFrom :: FilePath -> (FilePath -> IO(FilePath, a)) -> IO[[FilePath]]
+getDuplicatesFrom dir dupCriteria = do
+  files <- getFilesFrom dir
+  findDuplicates dupCriteria files
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--
+-- Old Implementation
+--
+{-
 getRecursiveContents :: FilePath -> IO[FilePath]
 getRecursiveContents topdir = do
   names <- getDirectoryContents' topdir
@@ -59,19 +124,6 @@ getDirectoryContents' :: FilePath -> IO[FilePath]
 getDirectoryContents' files = handle (\_ -> return []) $ do
   getDirectoryContents files
 
-findDuplicates origin = do
-  files <- getRecursiveContents origin 
-  filesAndSizes <- mapM fileNameAndSize files
-  let sizeDups  = (filter (\e -> ((snd e) > 0)) . filterDupsBy isEqualSize ordBySize) filesAndSizes
-  --putStrLn $ show sizeDups 
-  filesAndMD5s <- mapM fileNameAndMD5 (map fst sizeDups)
-  let dups = filterDupsBy isEqualSize ordBySize filesAndMD5s
-  let pdups = map fst dups
-  return $ unlines pdups
-
-
-
-
 -- filters duplicates in an orderable list
 -- TODO optimize and write a function that doesn't need to order the list
 filterDups :: (Eq a, Ord a) => [a] -> [a]
@@ -95,7 +147,10 @@ compareMD5 f1 f2 = do
   m2 <- fileMD5 f2
   return $ m1 == m2
 
-main = do
+oldmain = do
   args <- getArgs
-  duplicates <- findDuplicates (args !! 0)
+  duplicates <- _findDuplicates (args !! 0)
   putStrLn $ duplicates 
+-}
+
+
