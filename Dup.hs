@@ -22,6 +22,7 @@ module Dup
   , byFileName
   , getFilesFrom
   , getDuplicatesFrom
+  , allFiles
   ) where
 
 import System.FilePath ((</>), takeFileName)
@@ -31,10 +32,10 @@ import Control.Exception (handle)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink)
 
---findDuplicates :: (Eq a) => (FilePath -> IO(FilePath, a)) -> [FilePath] -> IO[[FilePath]]
-findDuplicates info files = do
+--findDuplicates :: (Eq a) => (FilePath -> IO(FilePath, a)) ->  ((FilePath, a) -> Bool) -> [FilePath] -> IO[[FilePath]]
+findDuplicates info filterBy files = do
   fileInfo <- mapM info files
-  return $ (filter ((>1) . length) . groupByKey) fileInfo
+  return $ (filter filterBy  . filter ((>1) . length) . groupByKey) fileInfo
 
 byFileName :: FilePath -> IO (FilePath, FilePath)
 byFileName file = do 
@@ -54,6 +55,9 @@ getFilesFrom topdir = do
       else return [path]
   return (concat paths)
 
+
+allFiles _ = True
+
 -- A safe version of getDirectoryContents that returns [] when
 -- the directory can't be opened
 getDirectoryContents' :: FilePath -> IO[FilePath]
@@ -63,7 +67,7 @@ getDirectoryContents' files = handle (\_ -> return []) $ do
 --getDuplicatesFrom :: FilePath -> (FilePath -> IO(FilePath, a)) -> IO[[FilePath]]
 getDuplicatesFrom dir dupCriteria = do
   files <- getFilesFrom dir
-  findDuplicates dupCriteria files
+  findDuplicates dupCriteria allFiles files
 
 
 
