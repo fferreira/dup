@@ -35,7 +35,7 @@ import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink)
 --findDuplicates :: (Eq a) => (FilePath -> IO(FilePath, a)) ->  ((FilePath, a) -> Bool) -> [FilePath] -> IO[[FilePath]]
 findDuplicates info filterBy files = do
   fileInfo <- mapM info files
-  return $ (filter filterBy  . filter ((>1) . length) . groupByKey) fileInfo
+  return $ (filter ((>1) . length) . groupByKey) (filter filterBy fileInfo)
 
 byFileName :: FilePath -> IO (FilePath, FilePath)
 byFileName file = do 
@@ -65,9 +65,9 @@ getDirectoryContents' files = handle (\_ -> return []) $ do
   getDirectoryContents files
 
 --getDuplicatesFrom :: FilePath -> (FilePath -> IO(FilePath, a)) -> IO[[FilePath]]
-getDuplicatesFrom dir dupCriteria = do
+getDuplicatesFrom dir dupCriteria filterBy = do
   files <- getFilesFrom dir
-  findDuplicates dupCriteria allFiles files
+  findDuplicates dupCriteria filterBy files
 
 
 
