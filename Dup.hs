@@ -32,7 +32,7 @@ import Control.Exception (handle)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink)
 
---findDuplicates :: (Eq a) => (FilePath -> IO(FilePath, a)) ->  ((FilePath, a) -> Bool) -> [FilePath] -> IO[[FilePath]]
+findDuplicates :: (Eq a) => (FilePath -> IO(a, FilePath)) ->  ((a, FilePath) -> Bool) -> [FilePath] -> IO[[FilePath]]
 findDuplicates info filterBy files = do
   fileInfo <- mapM info files
   return $ (filter ((>1) . length) . groupByKey) (filter filterBy fileInfo)
@@ -64,7 +64,7 @@ getDirectoryContents' :: FilePath -> IO[FilePath]
 getDirectoryContents' files = handle (\_ -> return []) $ do
   getDirectoryContents files
 
---getDuplicatesFrom :: FilePath -> (FilePath -> IO(FilePath, a)) -> IO[[FilePath]]
+getDuplicatesFrom :: (Eq a) => FilePath -> (FilePath -> IO(a, FilePath)) -> ((a, FilePath) -> Bool) -> IO[[FilePath]]
 getDuplicatesFrom dir dupCriteria filterBy = do
   files <- getFilesFrom dir
   findDuplicates dupCriteria filterBy files
