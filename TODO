@@ -1,3 +1,20 @@
 add alg data type for all the components
 add progress reporting
 use MayBe monad?
+update to new Control.Exception lib
+
+
+
+Optimize speed and memory usage:
+  use cksum of only parts of files
+  rewrite the getFilesFrom function
+
+Generalize function
+
+Write a filtering operator like (=|-) to chain filter to the list
+
+Use pure filtering
+
+Check function lazyness!
+
+

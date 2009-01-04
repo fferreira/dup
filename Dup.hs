@@ -28,7 +28,7 @@ module Dup
 import System.FilePath ((</>), takeFileName)
 import Dic (groupByKey)
 import Control.Monad (forM)
-import Control.Exception (handle)
+import Control.OldException (handle)
 import System.Directory (doesDirectoryExist, getDirectoryContents)
 import System.Posix.Files (getSymbolicLinkStatus, isSymbolicLink)
 

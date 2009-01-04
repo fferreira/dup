@@ -1,12 +1,11 @@
 import System.Environment (getArgs)
 import System.IO (openFile, IOMode(..), hClose, hFileSize)
-import Control.Exception (handle, bracket)
+import Control.OldException (handle, bracket)
 import qualified Data.ByteString.Lazy as DL
 import qualified Data.ByteString as D
 import Dup
-import MD5
-import Adler
-
+import Data.Digest.Pure.MD5
+import Data.Digest.Adler32
 
 main = do
   args <- getArgs
@@ -41,14 +40,14 @@ fileMD5 f = do
   content <- DL.readFile f
   return $! md5 content
 
-byAdler:: FilePath -> IO (Int, FilePath)
+--byAdler:: FilePath -> IO (GHC.Word.Word32, FilePath)
 byAdler file = do
   chksum <- fileAdler file
   return (chksum, file)
 
 fileAdler f = do
-  content <- readFile f
-  return $! adler content
+  content <- D.readFile f
+  return $! adler32 (D.unpack content)
 
 
 nonEmptyFiles (size, _) = size > 0
